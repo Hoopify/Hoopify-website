@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hoopify — Booking UI example</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .example-banner {
+            background: var(--brand-orange-dim);
+            border: 1px solid rgba(255, 90, 31, 0.35);
+            color: var(--text-secondary);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .example-banner a { color: var(--brand-orange); }
+        .example-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+        .mock-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .mock-summary {
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <h1 class="logo">HOOPIFY<span class="dot">.</span></h1>
+            <a href="index.html" class="btn secondary-btn" style="width: auto; padding: 6px 12px; font-size: 12px;">Back to app</a>
+        </header>
+
+        <main style="padding: 20px 24px 48px; max-width: 960px; margin: 0 auto;">
+            <div class="header-section">
+                <h2>Booking flow — example</h2>
+                <p style="color: var(--text-secondary); font-size: 14px;">Static preview of step 2 (week grid) and step 3 (summary). No sign-in or payment.</p>
+            </div>
+
+            <div class="example-banner">
+                This page is for <strong>design preview only</strong>. To try a real booking, use <a href="index.html">the main app</a> after sign-in.
+            </div>
+
+            <p class="example-section-title">After choosing focus areas — step 2</p>
+            <div class="mock-step">
+                <h3 style="margin-bottom: 8px;">2. Pick a time</h3>
+                <p class="step-lead">Choose an open slot. Individual 1-on-1 session — <strong>$50.00</strong>.</p>
+
+                <div class="week-nav">
+                    <button type="button" class="btn week-nav-btn" aria-hidden="true">←</button>
+                    <span class="week-label">Mon, Apr 13 – Sun, Apr 19, 2026</span>
+                    <button type="button" class="btn week-nav-btn" aria-hidden="true">→</button>
+                </div>
+
+                <div class="week-calendar-wrap">
+                    <div class="week-calendar" role="grid">
+                        <!-- Mon -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Mon</span>
+                                <span class="week-date">Mon, Apr 13</span>
+                            </div>
+                            <div class="week-slots">
+                                <button type="button" class="slot-btn">6:30 AM – 7:30 AM</button>
+                                <button type="button" class="slot-btn selected">8:00 AM – 9:00 AM</button>
+                                <button type="button" class="slot-btn">4:00 PM – 5:00 PM</button>
+                            </div>
+                        </div>
+                        <!-- Tue -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Tue</span>
+                                <span class="week-date">Tue, Apr 14</span>
+                            </div>
+                            <div class="week-slots">
+                                <button type="button" class="slot-btn">8:00 AM – 9:00 AM</button>
+                                <button type="button" class="slot-btn">12:00 PM – 1:00 PM</button>
+                            </div>
+                        </div>
+                        <!-- Wed -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Wed</span>
+                                <span class="week-date">Wed, Apr 15</span>
+                            </div>
+                            <div class="week-slots">
+                                <button type="button" class="slot-btn">7:00 AM – 8:00 AM</button>
+                            </div>
+                        </div>
+                        <!-- Thu -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Thu</span>
+                                <span class="week-date">Thu, Apr 16</span>
+                            </div>
+                            <div class="week-slots">
+                                <div class="week-no-slots">—</div>
+                            </div>
+                        </div>
+                        <!-- Fri -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Fri</span>
+                                <span class="week-date">Fri, Apr 17</span>
+                            </div>
+                            <div class="week-slots">
+                                <button type="button" class="slot-btn">5:30 PM – 6:30 PM</button>
+                            </div>
+                        </div>
+                        <!-- Sat -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Sat</span>
+                                <span class="week-date">Sat, Apr 18</span>
+                            </div>
+                            <div class="week-slots">
+                                <button type="button" class="slot-btn">6:30 AM – 7:30 AM</button>
+                                <button type="button" class="slot-btn">10:00 AM – 11:00 AM</button>
+                            </div>
+                        </div>
+                        <!-- Sun -->
+                        <div class="week-col">
+                            <div class="week-col-head">
+                                <span class="week-dow">Sun</span>
+                                <span class="week-date">Sun, Apr 19</span>
+                            </div>
+                            <div class="week-slots">
+                                <div class="week-no-slots">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="slot-hint">Selected: Mon, Apr 13 · 8:00 AM – 9:00 AM</p>
+                <button type="button" class="btn primary-btn mt-20" style="max-width: 280px;">Next: Payment details</button>
+            </div>
+
+            <p class="example-section-title">Step 3 — order summary (example)</p>
+            <div class="mock-step mock-summary">
+                <h3 style="margin-bottom: 16px;">3. Complete booking</h3>
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Session type</span>
+                        <span class="highlight">Individual (1-on-1)</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Focus areas</span>
+                        <span class="highlight-list">Three-Point Shot, Ball Handle</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Date &amp; time</span>
+                        <span class="highlight">2026-04-13 · 8:00 AM – 9:00 AM</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-row total">
+                        <span>Total price</span>
+                        <span>$50.00</span>
+                    </div>
+                </div>
+                <div class="mobile-pay-prompt" style="margin-top: 20px;">
+                    <div class="nfc-icon">📱</div>
+                    <p>Secure checkout powered by Stripe (cards, Apple Pay, Google Pay where available).</p>
+                    <button type="button" class="btn pay-btn" disabled style="opacity: 0.9;">Pay $50.00</button>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
