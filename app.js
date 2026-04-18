@@ -1,3 +1,10 @@
+(function () {
+    if (typeof document === 'undefined' && typeof require !== 'undefined') {
+        const path = require('path');
+        require(path.join(__dirname, 'server.js'));
+        return;
+    }
+
 // DATA STRUCTURES
 const CATEGORIES = [
     {
@@ -636,3 +643,5 @@ function renderHistory() {
 
 // START
 document.addEventListener('DOMContentLoaded', init);
+
+})();
