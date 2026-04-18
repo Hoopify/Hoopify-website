@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminCategories = document.getElementById('admin-categories');
     
     const availDay = document.getElementById('avail-day');
-    const availTime = document.getElementById('avail-time');
+    const availStart = document.getElementById('avail-start');
+    const availEnd = document.getElementById('avail-end');
     const btnAddAvail = document.getElementById('btn-add-availability');
     const availList = document.getElementById('availability-list');
     
@@ -35,60 +36,166 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // AVAILABILITY LOGIC
+    function formatRange(start, end) {
+        const fmt = (h) => {
+            const [hh, mm] = h.split(':').map(Number);
+            const d = new Date(2000, 0, 1, hh, mm || 0);
+            return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        };
+        return `${fmt(start)} – ${fmt(end)}`;
+    }
+
+    // AVAILABILITY LOGIC (slots: id, start, end)
     async function fetchAvailability() {
         try {
             const res = await fetch('/api/availability');
             const data = await res.json();
             availList.innerHTML = '';
-            
-            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-            days.forEach(day => {
-                const times = data[day] || [];
-                if(times.length > 0) {
-                    const block = document.createElement('div');
-                    block.style.background = 'var(--bg-dark)';
-                    block.style.padding = '12px';
-                    block.style.borderRadius = 'var(--radius-md)';
-                    block.style.marginBottom = '12px';
-                    block.style.border = '1px solid var(--border-color)';
-                    
-                    let timesHtml = times.map(t => `<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);">
-                        <span>${t}</span>
-                        <button class="btn" style="width: auto; padding: 2px 8px; font-size: 11px; background: rgba(255,0,0,0.1); color: red;" onclick="deleteSlot('${day}', '${t}')">X</button>
-                    </div>`).join('');
-                    
-                    block.innerHTML = `<div style="font-weight: bold; color: var(--brand-orange);">${day}</div>${timesHtml}`;
-                    availList.appendChild(block);
-                }
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach((day) => {
+                const slots = data[day] || [];
+                if (slots.length === 0) return;
+
+                const block = document.createElement('div');
+                block.style.background = 'var(--bg-dark)';
+                block.style.padding = '12px';
+                block.style.borderRadius = 'var(--radius-md)';
+                block.style.marginBottom = '12px';
+                block.style.border = '1px solid var(--border-color)';
+
+                const head = document.createElement('div');
+                head.style.fontWeight = 'bold';
+                head.style.color = 'var(--brand-orange)';
+                head.textContent = day;
+                block.appendChild(head);
+
+                slots.forEach((slot) => {
+                    if (!slot || !slot.id) return;
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.flexWrap = 'wrap';
+                    row.style.alignItems = 'center';
+                    row.style.gap = '8px';
+                    row.style.marginTop = '10px';
+                    row.style.paddingTop = '10px';
+                    row.style.borderTop = '1px solid var(--border-color)';
+
+                    const label = document.createElement('span');
+                    label.style.flex = '1';
+                    label.style.minWidth = '160px';
+                    label.textContent = formatRange(slot.start, slot.end);
+
+                    const editWrap = document.createElement('div');
+                    editWrap.style.display = 'none';
+                    editWrap.style.flex = '1 1 100%';
+                    editWrap.style.gap = '8px';
+                    editWrap.style.alignItems = 'center';
+
+                    const inS = document.createElement('input');
+                    inS.type = 'time';
+                    inS.value = slot.start;
+                    inS.style.flex = '1';
+                    inS.style.minWidth = '100px';
+                    const inE = document.createElement('input');
+                    inE.type = 'time';
+                    inE.value = slot.end;
+                    inE.style.flex = '1';
+                    inE.style.minWidth = '100px';
+
+                    const btnSave = document.createElement('button');
+                    btnSave.className = 'btn secondary-btn';
+                    btnSave.style.padding = '6px 10px';
+                    btnSave.style.fontSize = '12px';
+                    btnSave.textContent = 'Save';
+                    btnSave.addEventListener('click', async () => {
+                        const start = inS.value;
+                        const end = inE.value;
+                        if (!start || !end || start >= end) {
+                            alert('End must be after start.');
+                            return;
+                        }
+                        await fetch('/api/availability', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ day, id: slot.id, start, end }),
+                        });
+                        fetchAvailability();
+                    });
+
+                    const btnCancel = document.createElement('button');
+                    btnCancel.className = 'btn';
+                    btnCancel.style.padding = '6px 10px';
+                    btnCancel.style.fontSize = '12px';
+                    btnCancel.textContent = 'Cancel';
+                    btnCancel.addEventListener('click', () => {
+                        editWrap.style.display = 'none';
+                        label.style.display = '';
+                    });
+
+                    editWrap.appendChild(inS);
+                    editWrap.appendChild(inE);
+                    editWrap.appendChild(btnSave);
+                    editWrap.appendChild(btnCancel);
+
+                    const btnEdit = document.createElement('button');
+                    btnEdit.className = 'btn secondary-btn';
+                    btnEdit.style.padding = '4px 10px';
+                    btnEdit.style.fontSize = '11px';
+                    btnEdit.textContent = 'Edit';
+                    btnEdit.addEventListener('click', () => {
+                        label.style.display = 'none';
+                        editWrap.style.display = 'flex';
+                    });
+
+                    const btnDel = document.createElement('button');
+                    btnDel.className = 'btn';
+                    btnDel.style.padding = '4px 10px';
+                    btnDel.style.fontSize = '11px';
+                    btnDel.style.background = 'rgba(255,0,0,0.1)';
+                    btnDel.style.color = 'red';
+                    btnDel.textContent = 'Remove';
+                    btnDel.addEventListener('click', async () => {
+                        if (!confirm('Remove this open slot?')) return;
+                        await fetch('/api/availability', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ day, id: slot.id }),
+                        });
+                        fetchAvailability();
+                    });
+
+                    row.appendChild(label);
+                    row.appendChild(btnEdit);
+                    row.appendChild(btnDel);
+                    row.appendChild(editWrap);
+                    block.appendChild(row);
+                });
+
+                availList.appendChild(block);
             });
-            if(availList.innerHTML === '') {
+
+            if (availList.innerHTML === '') {
                 availList.innerHTML = '<div class="empty-state">No schedule set.</div>';
             }
-        } catch(e) {
+        } catch (e) {
             availList.innerHTML = '<div class="empty-state">Failed to load schedule.</div>';
         }
     }
 
-    window.deleteSlot = async (day, time) => {
-        await fetch('/api/availability', {
-            method: 'DELETE',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ day, time })
-        });
-        fetchAvailability();
-    };
-
     btnAddAvail.addEventListener('click', async () => {
         const day = availDay.value;
-        const time = availTime.value;
-        if (!time) return alert('Select a time');
+        const start = availStart.value;
+        const end = availEnd.value;
+        if (!start || !end) return alert('Set start and end times');
+        if (start >= end) return alert('End must be after start');
         await fetch('/api/availability', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ day, time })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day, start, end }),
         });
-        availTime.value = '';
+        availStart.value = '';
+        availEnd.value = '';
         fetchAvailability();
     });
 
@@ -113,8 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.style.alignItems = 'flex-start';
                 
                 const tags = b.focus.map(f => `<span class="gain-tag" style="margin-right:4px;">${f}</span>`).join('');
+                const when =
+                    b.time_start && b.time_end
+                        ? `${b.date} · ${formatRange(b.time_start, b.time_end)}`
+                        : `${b.date} @ ${b.time}`;
                 div.innerHTML = `
-                    <div style="font-size: 15px; font-weight: bold; color: var(--brand-orange); margin-bottom: 6px;">${b.date} @ ${b.time}</div>
+                    <div style="font-size: 15px; font-weight: bold; color: var(--brand-orange); margin-bottom: 6px;">${when}</div>
                     <div style="font-size: 14px; font-weight: 500; margin-bottom: 8px;">Player: <span style="color: #fff;">${b.username}</span></div>
                     <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Target Focus:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">${tags}</div>

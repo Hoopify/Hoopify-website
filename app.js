@@ -51,8 +51,52 @@ let workoutHistory = [];
 // STATE
 let currentUser = null;
 let selectedSkills = [];
-let workoutMode = "individual"; // individual or group
+const workoutMode = 'individual';
 let workoutDateTime = null;
+/** @type {{ date: string, dayName: string, slot: { id: string, start: string, end: string } } | null} */
+let selectedSlot = null;
+let weekOffset = 0;
+let systemAvailability = {};
+
+const BOOKING_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function formatTime12(hhmm) {
+    const parts = String(hhmm || '').split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) || 0;
+    if (Number.isNaN(h)) return hhmm;
+    const d = new Date(2000, 0, 1, h, m);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function formatSlotRange(start, end) {
+    return `${formatTime12(start)} – ${formatTime12(end)}`;
+}
+
+function getMonday(d) {
+    const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+}
+
+function buildWeekDays(offset) {
+    const monday = getMonday(new Date());
+    monday.setDate(monday.getDate() + offset * 7);
+    const out = [];
+    for (let i = 0; i < 7; i++) {
+        const cell = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+        const y = cell.getFullYear();
+        const mo = String(cell.getMonth() + 1).padStart(2, '0');
+        const da = String(cell.getDate()).padStart(2, '0');
+        out.push({
+            dayName: BOOKING_WEEKDAYS[i],
+            dateISO: `${y}-${mo}-${da}`,
+            label: cell.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        });
+    }
+    return out;
+}
 
 // DOM ELEMENTS
 const views = document.querySelectorAll('.view');
@@ -415,47 +459,91 @@ function setupNavigation() {
 
 // WIZARD LOGIC
 function setupWizard() {
-    let systemAvailability = {};
+    const weekCalendarEl = document.getElementById('week-calendar');
+    const weekLabelEl = document.getElementById('week-label');
+    const btnNextPayment = document.getElementById('btn-next-payment');
+    const slotHintEl = document.getElementById('slot-hint');
+
+    function updateWeekLabel() {
+        const days = buildWeekDays(weekOffset);
+        if (weekLabelEl && days.length) {
+            weekLabelEl.textContent = `${days[0].label} – ${days[6].label}`;
+        }
+    }
+
+    function renderWeekCalendar() {
+        if (!weekCalendarEl) return;
+        const days = buildWeekDays(weekOffset);
+        updateWeekLabel();
+        weekCalendarEl.innerHTML = '';
+
+        days.forEach((d) => {
+            const col = document.createElement('div');
+            col.className = 'week-col';
+            col.innerHTML = `<div class="week-col-head"><span class="week-dow">${d.dayName.slice(0, 3)}</span><span class="week-date">${d.label}</span></div>`;
+            const slotsWrap = document.createElement('div');
+            slotsWrap.className = 'week-slots';
+
+            const slots = systemAvailability[d.dayName] || [];
+            const list = Array.isArray(slots) ? slots : [];
+
+            if (list.length === 0) {
+                slotsWrap.innerHTML = '<div class="week-no-slots">—</div>';
+            } else {
+                list.forEach((slot) => {
+                    if (!slot || !slot.start || !slot.end) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'slot-btn';
+                    btn.textContent = formatSlotRange(slot.start, slot.end);
+                    const isSel =
+                        selectedSlot &&
+                        selectedSlot.date === d.dateISO &&
+                        selectedSlot.slot.id === slot.id;
+                    if (isSel) btn.classList.add('selected');
+
+                    btn.addEventListener('click', () => {
+                        selectedSlot = { date: d.dateISO, dayName: d.dayName, slot: { ...slot } };
+                        weekCalendarEl.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        if (btnNextPayment) btnNextPayment.disabled = false;
+                        if (slotHintEl) {
+                            slotHintEl.textContent = `Selected: ${d.label} · ${formatSlotRange(slot.start, slot.end)}`;
+                        }
+                    });
+                    slotsWrap.appendChild(btn);
+                });
+            }
+
+            col.appendChild(slotsWrap);
+            weekCalendarEl.appendChild(col);
+        });
+    }
 
     // Step 1 -> 2
     btnNextTime.addEventListener('click', async () => {
         stepFocus.classList.remove('active');
         stepTime.classList.add('active');
-        
-        // Fetch Admin Availability Template
+        selectedSlot = null;
+        if (btnNextPayment) btnNextPayment.disabled = true;
+        if (slotHintEl) slotHintEl.textContent = 'Tap a time to select it, then continue.';
+
         try {
             const res = await fetch('/api/availability');
             systemAvailability = await res.json();
-            document.getElementById('workout-time').innerHTML = '<option value="">Select a date first...</option>';
-        } catch(e) { }
+        } catch (e) {
+            systemAvailability = {};
+        }
+        renderWeekCalendar();
     });
 
-    // Handle Date Changes to populate Times
-    document.getElementById('workout-date').addEventListener('change', (e) => {
-        const timeSelect = document.getElementById('workout-time');
-        const dateVal = e.target.value;
-        if (!dateVal) {
-            timeSelect.innerHTML = '<option value="">Select a date first...</option>';
-            return;
-        }
-
-        // Parse date properly ignoring timezone shifts from ISO
-        const [year, month, day] = dateVal.split('-');
-        const selectedDate = new Date(year, month - 1, day);
-        const dayOfWeek = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
-
-        const availableTimes = systemAvailability[dayOfWeek] || [];
-        
-        if(availableTimes.length === 0) {
-            timeSelect.innerHTML = '<option value="">No availability for ' + dayOfWeek + 's</option>';
-            return;
-        }
-
-        timeSelect.innerHTML = '<option value="" disabled selected>Select a time block...</option>';
-        availableTimes.forEach(t => {
-            // Display friendly time
-            timeSelect.innerHTML += `<option value="${t}">${t}</option>`;
-        });
+    document.getElementById('week-prev')?.addEventListener('click', () => {
+        weekOffset -= 1;
+        renderWeekCalendar();
+    });
+    document.getElementById('week-next')?.addEventListener('click', () => {
+        weekOffset += 1;
+        renderWeekCalendar();
     });
 
     // Back 2 -> 1
@@ -464,35 +552,28 @@ function setupWizard() {
         stepFocus.classList.add('active');
     });
 
-    // Mode Selection
-    const modeCards = document.querySelectorAll('.mode-card');
-    modeCards.forEach(card => {
-        card.addEventListener('click', () => {
-            modeCards.forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-            workoutMode = card.dataset.mode;
-        });
-    });
-
     // Step 2 -> 3
-    document.getElementById('btn-next-payment').addEventListener('click', () => {
-        const dateRaw = document.getElementById('workout-date').value;
-        const timeRaw = document.getElementById('workout-time').value;
-        
-        if(!dateRaw || !timeRaw) {
-            alert("Please select a date and an available time block");
+    btnNextPayment.addEventListener('click', () => {
+        if (!selectedSlot) {
+            alert('Please select an available time slot.');
             return;
         }
 
-        // populate summary
-        workoutDateTime = { date: dateRaw, time: timeRaw };
-        document.getElementById('summary-type').textContent = workoutMode === 'individual' ? 'Individual (1-on-1)' : 'Group Workout';
+        const { date, slot } = selectedSlot;
+        const timeLabel = `${slot.start}–${slot.end}`;
+        workoutDateTime = {
+            date,
+            time: timeLabel,
+            time_start: slot.start,
+            time_end: slot.end,
+        };
+
+        document.getElementById('summary-type').textContent = 'Individual (1-on-1)';
         document.getElementById('summary-focus').textContent = selectedSkills.join(', ');
-        document.getElementById('summary-datetime').textContent = `${dateRaw} @ ${timeRaw}`;
-        
-        const price = workoutMode === 'individual' ? '$50.00' : '$30.00';
-        document.getElementById('summary-price').textContent = price;
-        document.getElementById('btn-pay-amount').textContent = price;
+        document.getElementById('summary-datetime').textContent = `${date} · ${formatSlotRange(slot.start, slot.end)}`;
+
+        document.getElementById('summary-price').textContent = '$50.00';
+        document.getElementById('btn-pay-amount').textContent = '$50.00';
 
         stepTime.classList.remove('active');
         stepPayment.classList.add('active');
@@ -523,6 +604,8 @@ function setupWizard() {
                     username: currentUser,
                     date: workoutDateTime.date,
                     time: workoutDateTime.time,
+                    time_start: workoutDateTime.time_start,
+                    time_end: workoutDateTime.time_end,
                     focus: selectedSkills,
                     mode: workoutMode,
                 }),
@@ -558,13 +641,14 @@ function resetBooking() {
     selectedSkills = [];
     document.querySelectorAll('.skill-chip').forEach(c => c.classList.remove('selected'));
     btnNextTime.disabled = true;
-    document.getElementById('workout-date').value = '';
-    document.getElementById('workout-time').innerHTML = '<option value="">Select a date first...</option>';
-    workoutMode = 'individual';
-    document.querySelectorAll('.mode-card').forEach((c, idx) => {
-        if(idx === 0) c.classList.add('active');
-        else c.classList.remove('active');
-    });
+    selectedSlot = null;
+    weekOffset = 0;
+    const btnNp = document.getElementById('btn-next-payment');
+    if (btnNp) btnNp.disabled = true;
+    const hint = document.getElementById('slot-hint');
+    if (hint) hint.textContent = 'Tap a time to select it, then continue.';
+    const wc = document.getElementById('week-calendar');
+    if (wc) wc.innerHTML = '';
 }
 
 // removed completeWorkoutBook locally since we use API and Tracker handles this

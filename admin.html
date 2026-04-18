@@ -50,9 +50,9 @@
             <!-- AVAILABILITY -->
             <div class="admin-card">
                 <h3>1. Recurring Weekly Schedule</h3>
-                <div style="display: flex; gap: 12px;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 12px; color: var(--text-secondary);">Day of Week</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 140px;">
+                        <label style="font-size: 12px; color: var(--text-secondary);">Day</label>
                         <select id="avail-day">
                             <option value="Monday">Monday</option>
                             <option value="Tuesday">Tuesday</option>
@@ -63,12 +63,16 @@
                             <option value="Sunday">Sunday</option>
                         </select>
                     </div>
-                    <div style="flex: 1;">
-                        <label style="font-size: 12px; color: var(--text-secondary);">Time Slot</label>
-                        <input type="time" id="avail-time" required>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label style="font-size: 12px; color: var(--text-secondary);">Start</label>
+                        <input type="time" id="avail-start" required>
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label style="font-size: 12px; color: var(--text-secondary);">End</label>
+                        <input type="time" id="avail-end" required>
                     </div>
                 </div>
-                <button class="btn secondary-btn" id="btn-add-availability" style="margin-top: 8px;">+ Add Slot</button>
+                <button class="btn secondary-btn" id="btn-add-availability" style="margin-top: 12px;">+ Add open slot</button>
                 
                 <h4 style="margin-top: 24px; font-size: 14px; color: var(--text-secondary);">Your Locked Schedule:</h4>
                 <div id="availability-list" style="margin-top: 12px;"></div>

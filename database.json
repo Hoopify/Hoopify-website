@@ -15,22 +15,46 @@
   },
   "availability": {
     "Monday": [
-      "08:00"
+      {
+        "id": "legacy-Monday-0-0800",
+        "start": "08:00",
+        "end": "09:00"
+      }
     ],
     "Tuesday": [
-      "08:00"
+      {
+        "id": "legacy-Tuesday-0-0800",
+        "start": "08:00",
+        "end": "09:00"
+      }
     ],
     "Wednesday": [
-      "08:00"
+      {
+        "id": "legacy-Wednesday-0-0800",
+        "start": "08:00",
+        "end": "09:00"
+      }
     ],
     "Thursday": [
-      "08:00"
+      {
+        "id": "legacy-Thursday-0-0800",
+        "start": "08:00",
+        "end": "09:00"
+      }
     ],
     "Friday": [
-      "08:00"
+      {
+        "id": "legacy-Friday-0-0800",
+        "start": "08:00",
+        "end": "09:00"
+      }
     ],
     "Saturday": [
-      "06:30"
+      {
+        "id": "legacy-Saturday-0-0630",
+        "start": "06:30",
+        "end": "07:30"
+      }
     ],
     "Sunday": []
   },

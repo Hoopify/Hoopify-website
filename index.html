@@ -115,45 +115,26 @@
                         <button class="btn primary-btn mt-20 fade-in" id="btn-next-time" disabled>Next: Select Time</button>
                     </div>
 
-                    <!-- Step 2: Time & Mode -->
+                    <!-- Step 2: Week grid & individual $50 -->
                     <div class="wizard-step" id="step-time">
                         <button class="btn back-btn" id="btn-back-focus">← Back</button>
-                        <h3>2. Schedule & Mode</h3>
-                        
-                        <div class="form-group">
-                            <label>Pick a Date</label>
-                            <input type="date" id="workout-date" required style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 14px 16px; border-radius: var(--radius-md); font-size: 16px; margin-bottom: 12px;">
-                        </div>
-                        <div class="form-group">
-                            <label>Available Time</label>
-                            <select id="workout-time" required style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 14px 16px; border-radius: var(--radius-md); font-size: 16px;">
-                                <option value="">Select a date first...</option>
-                            </select>
+                        <h3>2. Pick a time</h3>
+                        <p class="step-lead">Choose an open slot. Individual 1-on-1 session — <strong>$50.00</strong>.</p>
+
+                        <div class="week-nav">
+                            <button type="button" class="btn week-nav-btn" id="week-prev" aria-label="Previous week">←</button>
+                            <span class="week-label" id="week-label"></span>
+                            <button type="button" class="btn week-nav-btn" id="week-next" aria-label="Next week">→</button>
                         </div>
 
-                        <div class="workout-mode-selection">
-                            <label>Workout Type</label>
-                            <div class="mode-cards">
-                                <div class="mode-card active" data-mode="individual">
-                                    <div class="mode-icon">1v1</div>
-                                    <div class="mode-info">
-                                        <h4>Individual Session</h4>
-                                        <p>1-on-1 personalized training</p>
-                                    </div>
-                                    <div class="mode-price">$50.00</div>
-                                </div>
-                                <div class="mode-card" data-mode="group">
-                                    <div class="mode-icon">Group</div>
-                                    <div class="mode-info">
-                                        <h4>Join Group Workout</h4>
-                                        <p>Train with others, split the cost</p>
-                                    </div>
-                                    <div class="mode-price">$30.00</div>
-                                </div>
+                        <div class="week-calendar-wrap">
+                            <div class="week-calendar" id="week-calendar" role="grid" aria-label="Available times by day">
+                                <!-- Filled by JS -->
                             </div>
                         </div>
+                        <p class="slot-hint" id="slot-hint">Tap a time to select it, then continue.</p>
                         
-                        <button class="btn primary-btn mt-20" id="btn-next-payment">Next: Payment Details</button>
+                        <button class="btn primary-btn mt-20" id="btn-next-payment" disabled>Next: Payment Details</button>
                     </div>
 
                     <!-- Step 3: Payment -->

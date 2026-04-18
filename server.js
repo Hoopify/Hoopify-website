@@ -16,7 +16,8 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 const PRICE_INDIVIDUAL_CENTS = 5000;
-const PRICE_GROUP_CENTS = 3000;
+
+const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 let stripe = null;
 if (STRIPE_SECRET_KEY) {
@@ -62,14 +63,70 @@ const readDb = () => {
     try {
         const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
         if (!db.availability || Array.isArray(db.availability)) {
-            db.availability = defaultDb.availability;
+            db.availability = JSON.parse(JSON.stringify(defaultDb.availability));
         }
+        migrateAvailability(db);
         return db;
     } catch {
-        return defaultDb;
+        return JSON.parse(JSON.stringify(defaultDb));
     }
 };
 const writeDb = (data) => fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+
+function padTimePart(n) {
+    return String(n).padStart(2, '0');
+}
+
+function addOneHour(hhmm) {
+    const [h, m] = String(hhmm || '').split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return '23:59';
+    let total = h * 60 + m + 60;
+    total %= 24 * 60;
+    const nh = Math.floor(total / 60);
+    const nm = total % 60;
+    return `${padTimePart(nh)}:${padTimePart(nm)}`;
+}
+
+function migrateDaySlots(arr, day) {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map((item, idx) => {
+            if (typeof item === 'string') {
+                return {
+                    id: `legacy-${day}-${idx}-${String(item).replace(/:/g, '')}`,
+                    start: item,
+                    end: addOneHour(item),
+                };
+            }
+            if (item && typeof item === 'object' && item.start && item.end) {
+                return {
+                    id: item.id || `legacy-${day}-${idx}`,
+                    start: item.start,
+                    end: item.end,
+                };
+            }
+            return null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.start.localeCompare(b.start));
+}
+
+function migrateAvailability(db) {
+    if (!db.availability || typeof db.availability !== 'object' || Array.isArray(db.availability)) {
+        db.availability = JSON.parse(JSON.stringify(defaultDb.availability));
+        writeDb(db);
+        return;
+    }
+    let changed = false;
+    for (const day of WEEKDAY_NAMES) {
+        const next = migrateDaySlots(db.availability[day], day);
+        if (JSON.stringify(next) !== JSON.stringify(db.availability[day])) {
+            db.availability[day] = next;
+            changed = true;
+        }
+    }
+    if (changed) writeDb(db);
+}
 
 // ---- Stripe webhook (raw body — register before express.json) ----
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -193,7 +250,9 @@ app.post('/api/checkout/session', async (req, res) => {
     const username = normalizeEmail(req.body.username);
     const date = String(req.body.date || '').trim();
     const time = String(req.body.time || '').trim();
-    const mode = req.body.mode === 'group' ? 'group' : 'individual';
+    const timeStart = String(req.body.time_start || req.body.timeStart || '').trim();
+    const timeEnd = String(req.body.time_end || req.body.timeEnd || '').trim();
+    const mode = 'individual';
     const focus = Array.isArray(req.body.focus) ? req.body.focus : [];
 
     if (!isValidEmail(username)) {
@@ -203,9 +262,10 @@ app.post('/api/checkout/session', async (req, res) => {
         return res.status(400).json({ error: 'Date and time are required' });
     }
 
-    const amount = mode === 'group' ? PRICE_GROUP_CENTS : PRICE_INDIVIDUAL_CENTS;
-    const label = mode === 'group' ? 'Hoopify group workout' : 'Hoopify individual session';
+    const amount = PRICE_INDIVIDUAL_CENTS;
+    const label = 'Hoopify individual session ($50)';
     const focusMeta = focus.join('|').slice(0, 450);
+    const desc = timeStart && timeEnd ? `${date} · ${timeStart}–${timeEnd}` : `${date} @ ${time}`;
 
     try {
         const session = await stripe.checkout.sessions.create({
@@ -217,7 +277,7 @@ app.post('/api/checkout/session', async (req, res) => {
                         currency: 'usd',
                         product_data: {
                             name: label,
-                            description: `${date} @ ${time}`,
+                            description: desc.slice(0, 500),
                         },
                         unit_amount: amount,
                     },
@@ -230,6 +290,8 @@ app.post('/api/checkout/session', async (req, res) => {
                 username,
                 date,
                 time,
+                time_start: timeStart || '',
+                time_end: timeEnd || '',
                 mode,
                 focus: focusMeta,
             },
@@ -268,26 +330,84 @@ app.get('/api/checkout/verify', async (req, res) => {
     }
 });
 
-// ---- AVAILABILITY ----
-app.get('/api/availability', (req, res) => res.json(readDb().availability));
+// ---- AVAILABILITY (slots: { id, start, end } per weekday) ----
+app.get('/api/availability', (req, res) => {
+    const db = readDb();
+    res.json(db.availability);
+});
+
+function validWeekday(day) {
+    return WEEKDAY_NAMES.includes(day);
+}
+
 app.post('/api/availability', (req, res) => {
-    const { day, time } = req.body;
+    const day = String(req.body.day || '').trim();
+    const start = String(req.body.start || '').trim();
+    const end = String(req.body.end || '').trim();
+    if (!validWeekday(day)) {
+        return res.status(400).json({ error: 'Invalid day' });
+    }
+    if (!start || !end) {
+        return res.status(400).json({ error: 'start and end times are required (HH:MM)' });
+    }
+    if (start >= end) {
+        return res.status(400).json({ error: 'End time must be after start time' });
+    }
     const db = readDb();
     if (!db.availability[day]) db.availability[day] = [];
-    if (!db.availability[day].includes(time)) {
-        db.availability[day].push(time);
-        db.availability[day].sort();
+    const slot = { id: crypto.randomBytes(12).toString('hex'), start, end };
+    db.availability[day].push(slot);
+    db.availability[day].sort((a, b) => a.start.localeCompare(b.start));
+    writeDb(db);
+    res.json({ success: true, slot });
+});
+
+app.put('/api/availability', (req, res) => {
+    const day = String(req.body.day || '').trim();
+    const id = String(req.body.id || '').trim();
+    const start = String(req.body.start || '').trim();
+    const end = String(req.body.end || '').trim();
+    if (!validWeekday(day) || !id) {
+        return res.status(400).json({ error: 'Invalid day or id' });
+    }
+    if (!start || !end) {
+        return res.status(400).json({ error: 'start and end are required' });
+    }
+    if (start >= end) {
+        return res.status(400).json({ error: 'End time must be after start time' });
+    }
+    const db = readDb();
+    const list = db.availability[day] || [];
+    const idx = list.findIndex((s) => s && s.id === id);
+    if (idx === -1) {
+        return res.status(404).json({ error: 'Slot not found' });
+    }
+    list[idx] = { ...list[idx], start, end };
+    list.sort((a, b) => a.start.localeCompare(b.start));
+    writeDb(db);
+    res.json({ success: true, slot: list[idx] });
+});
+
+app.delete('/api/availability', (req, res) => {
+    const day = String(req.body.day || '').trim();
+    const id = String(req.body.id || '').trim();
+    const legacyTime = String(req.body.time || '').trim();
+    const db = readDb();
+    if (!validWeekday(day)) {
+        return res.status(400).json({ error: 'Invalid day' });
+    }
+    if (!db.availability[day]) db.availability[day] = [];
+    if (id) {
+        db.availability[day] = db.availability[day].filter((s) => s && s.id !== id);
+    } else if (legacyTime) {
+        db.availability[day] = db.availability[day].filter((s) => {
+            if (typeof s === 'string') return s !== legacyTime;
+            return !(s.start === legacyTime || `${s.start}–${s.end}` === legacyTime);
+        });
+    } else {
+        return res.status(400).json({ error: 'id is required' });
     }
     writeDb(db);
-    res.json({ success: true });
-});
-app.delete('/api/availability', (req, res) => {
-    const { day, time } = req.body;
-    const db = readDb();
-    if (db.availability[day]) {
-        db.availability[day] = db.availability[day].filter((t) => t !== time);
-        writeDb(db);
-    }
     res.json({ success: true });
 });
 
