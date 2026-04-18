@@ -1,9 +1,9 @@
 /**
  * One-shot: copy database.json → Supabase Postgres.
  *
- * 1. Run scripts/supabase-schema.sql in Supabase SQL Editor (once).
- * 2. Set DATABASE_URL in .env (Session mode URI from Supabase, port 5432, or pooler 6543 with pgbouncer).
- * 3. npm install && node scripts/migrate-json-to-pg.js
+ * 1. Set DATABASE_URL in .env (Supabase URI; password may need URL-encoding).
+ * 2. npm install && node scripts/migrate-json-to-pg.js
+ *    (applies scripts/supabase-schema.sql automatically, then copies database.json)
  */
 
 require('dotenv').config();
@@ -24,13 +24,20 @@ async function main() {
     const raw = fs.readFileSync(DB_JSON, 'utf8');
     const data = JSON.parse(raw);
 
+    // Strip query string so sslmode=require does not force verify-full (avoids cert chain errors with pooler).
+    const connBase = connectionString.replace(/\?.*$/, '');
+
     const client = new Client({
-        connectionString,
+        connectionString: connBase,
         ssl: { rejectUnauthorized: false },
     });
 
     await client.connect();
     console.log('Connected to Postgres.');
+
+    const schemaSql = fs.readFileSync(path.join(__dirname, 'supabase-schema.sql'), 'utf8');
+    await client.query(schemaSql);
+    console.log('Schema applied (hoopify_* tables).');
 
     try {
         await client.query('BEGIN');
