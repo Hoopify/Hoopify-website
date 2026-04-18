@@ -17,6 +17,12 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 const PRICE_INDIVIDUAL_CENTS = 5000;
 
+/** Default training location (shown on checkout, bookings, home “My booking”). Override with BOOKING_VENUE in .env */
+const BOOKING_VENUE = (
+    process.env.BOOKING_VENUE ||
+    'Carrefour Multisports — 3095 Autoroute Laval Ouest, Carrefour Multisports, Laval, QC H7P 4W5'
+).trim();
+
 const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 let stripe = null;
@@ -151,6 +157,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             stripeCheckoutSessionId: session.id,
             amountTotalCents: session.amount_total,
             paymentStatus: session.payment_status,
+            defaultVenue: BOOKING_VENUE,
         });
     }
 
@@ -237,7 +244,13 @@ app.get('/api/stripe/config', (req, res) => {
     res.json({
         configured: Boolean(STRIPE_SECRET_KEY && stripe),
         publishableKey,
+        venue: BOOKING_VENUE,
     });
+});
+
+/** Public app config (venue for UI). */
+app.get('/api/config', (req, res) => {
+    res.json({ venue: BOOKING_VENUE });
 });
 
 app.post('/api/checkout/session', async (req, res) => {
@@ -294,6 +307,7 @@ app.post('/api/checkout/session', async (req, res) => {
                 time_end: timeEnd || '',
                 mode,
                 focus: focusMeta,
+                venue: BOOKING_VENUE.slice(0, 500),
             },
             customer_email: username,
         });
@@ -322,6 +336,7 @@ app.get('/api/checkout/verify', async (req, res) => {
             stripeCheckoutSessionId: session.id,
             amountTotalCents: session.amount_total,
             paymentStatus: session.payment_status,
+            defaultVenue: BOOKING_VENUE,
         });
         return res.json({ ok: result.ok, booking: result.booking, duplicate: result.duplicate });
     } catch (e) {
@@ -413,6 +428,18 @@ app.delete('/api/availability', (req, res) => {
 
 // ---- BOOKINGS ----
 app.get('/api/bookings', (req, res) => res.json(readDb().bookings));
+
+/** Bookings for the signed-in user (email = username). */
+app.get('/api/bookings/mine', (req, res) => {
+    const email = normalizeEmail(req.query.email || '');
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ error: 'Valid email is required' });
+    }
+    const db = readDb();
+    const list = (db.bookings || []).filter((b) => normalizeEmail(b.username) === email);
+    list.sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.time || '').localeCompare(String(b.time || '')));
+    res.json({ bookings: list, venueDefault: BOOKING_VENUE });
+});
 
 /** Direct booking creation is disabled — use Stripe Checkout. */
 app.post('/api/bookings', (req, res) => {

@@ -1102,3 +1102,67 @@ input {
     color: var(--text-secondary);
     margin-top: 8px;
 }
+
+/* Home — My booking */
+.home-booking-banner {
+    margin-top: 24px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: var(--brand-green);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.home-booking-banner-icon {
+    font-size: 18px;
+}
+
+.home-my-booking {
+    margin-top: 28px;
+    text-align: left;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.home-my-booking-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand-orange);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.home-my-booking-line {
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.home-my-booking-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+}
+
+.home-my-booking-place {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}

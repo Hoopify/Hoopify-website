@@ -58,5 +58,21 @@
     ],
     "Sunday": []
   },
-  "bookings": []
+  "bookings": [
+    {
+      "id": "demo-booking-admin-preview",
+      "username": "litowz12@gmail.com",
+      "date": "2026-05-15",
+      "time": "08:00-09:00",
+      "time_start": "08:00",
+      "time_end": "09:00",
+      "venue": "Carrefour Multisports — 3095 Autoroute Laval Ouest, Carrefour Multisports, Laval, QC H7P 4W5",
+      "focus": ["Three-Point Shot", "Ball Handle"],
+      "mode": "individual",
+      "created_at": "2026-04-18T12:00:00.000Z",
+      "stripe_checkout_session_id": null,
+      "payment_status": "paid",
+      "amount_total_cents": 5000
+    }
+  ]
 }

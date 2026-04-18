@@ -98,6 +98,98 @@ function buildWeekDays(offset) {
     return out;
 }
 
+function pickPrimaryBooking(bookings) {
+    if (!bookings || !bookings.length) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    const sorted = [...bookings].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const upcoming = sorted.filter((b) => b.date >= today);
+    if (upcoming.length) return upcoming[0];
+    return sorted[sorted.length - 1];
+}
+
+function formatBookingWhen(b) {
+    if (!b) return '';
+    const dateStr = b.date || '';
+    let prettyDate = dateStr;
+    try {
+        const parts = dateStr.split('-').map(Number);
+        if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
+            const [y, m, d] = parts;
+            const dt = new Date(y, m - 1, d);
+            prettyDate = dt.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+            });
+        }
+    } catch {
+        /* keep raw */
+    }
+    if (b.time_start && b.time_end) {
+        return `${prettyDate} · ${formatSlotRange(b.time_start, b.time_end)}`;
+    }
+    return `${prettyDate} · ${b.time || ''}`;
+}
+
+function hideHomeBooking() {
+    document.getElementById('home-my-booking')?.classList.add('hidden');
+    document.getElementById('home-booking-confirmed')?.classList.add('hidden');
+}
+
+function renderHomeBooking(booking, venueFallback, options) {
+    const card = document.getElementById('home-my-booking');
+    const whenEl = document.getElementById('home-my-booking-when');
+    const whereEl = document.getElementById('home-my-booking-where');
+    const banner = document.getElementById('home-booking-confirmed');
+    if (!card || !whenEl || !whereEl) return;
+    if (!booking) {
+        hideHomeBooking();
+        return;
+    }
+    const venue = (booking.venue && String(booking.venue).trim()) || venueFallback || '';
+    whenEl.textContent = formatBookingWhen(booking);
+    whereEl.textContent = venue;
+    card.classList.remove('hidden');
+    if (options.justConfirmed && banner) {
+        banner.classList.remove('hidden');
+        window.clearTimeout(renderHomeBooking._bannerT);
+        renderHomeBooking._bannerT = window.setTimeout(() => {
+            banner.classList.add('hidden');
+        }, 10000);
+    } else if (banner) {
+        banner.classList.add('hidden');
+    }
+}
+
+async function renderHomeBookingFromServer(booking, options) {
+    let fallback = '';
+    try {
+        const r = await fetch('/api/config');
+        const c = await r.json();
+        fallback = c.venue || '';
+    } catch {
+        /* ignore */
+    }
+    renderHomeBooking(booking, fallback, options || {});
+}
+
+async function loadMyBooking(options) {
+    if (!currentUser) {
+        hideHomeBooking();
+        return;
+    }
+    try {
+        const res = await fetch(`/api/bookings/mine?email=${encodeURIComponent(currentUser)}`);
+        const data = await res.json();
+        const venueFallback = data.venueDefault || '';
+        const b = pickPrimaryBooking(data.bookings || []);
+        renderHomeBooking(b, venueFallback, options || {});
+    } catch {
+        hideHomeBooking();
+    }
+}
+
 // DOM ELEMENTS
 const views = document.querySelectorAll('.view');
 const navItems = document.querySelectorAll('.nav-item');
@@ -121,7 +213,7 @@ async function init() {
     await handleCheckoutReturn();
 }
 
-/** After Stripe redirect: verify session and show confirmation. */
+/** After Stripe redirect: verify session and show confirmation on home. */
 async function handleCheckoutReturn() {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get('checkout');
@@ -133,12 +225,19 @@ async function handleCheckoutReturn() {
             const res = await fetch(`/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`);
             const data = await res.json();
             if (data.ok) {
-                switchView('view-booking');
                 stepFocus.classList.remove('active');
                 stepTime.classList.remove('active');
                 stepPayment.classList.remove('active');
                 bookingWizardEl?.classList.add('hidden');
-                bookingSuccess.classList.remove('hidden');
+                bookingSuccess.classList.add('hidden');
+                resetBooking();
+                await fetchTrackerStats();
+                switchView('view-home');
+                if (data.booking) {
+                    await renderHomeBookingFromServer(data.booking, { justConfirmed: true });
+                } else {
+                    await loadMyBooking({ justConfirmed: true });
+                }
             } else {
                 alert('We could not confirm your payment. If you were charged, contact support with your email.');
             }
@@ -233,6 +332,7 @@ function clearSession() {
         trackerName.textContent = '';
         trackerName.style.display = 'none';
     }
+    hideHomeBooking();
 }
 
 function setupLogout() {
@@ -438,6 +538,9 @@ function switchView(targetId) {
     
     if(targetId === 'view-tracker') {
         fetchTrackerStats().then(renderTracker);
+    }
+    if (targetId === 'view-home' && currentUser) {
+        loadMyBooking();
     }
 }
 

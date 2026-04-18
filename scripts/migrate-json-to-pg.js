@@ -37,6 +37,7 @@ async function main() {
 
     const schemaSql = fs.readFileSync(path.join(__dirname, 'supabase-schema.sql'), 'utf8');
     await client.query(schemaSql);
+    await client.query('ALTER TABLE public.hoopify_bookings ADD COLUMN IF NOT EXISTS venue TEXT;');
     console.log('Schema applied (hoopify_* tables).');
 
     try {
@@ -96,15 +97,16 @@ async function main() {
             if (!b || !b.id) continue;
             await client.query(
                 `INSERT INTO public.hoopify_bookings (
-          id, username, date, time, time_start, time_end, focus, mode,
+          id, username, date, time, time_start, time_end, venue, focus, mode,
           created_at, stripe_checkout_session_id, payment_status, amount_total_cents
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13)
         ON CONFLICT (id) DO UPDATE SET
           username = EXCLUDED.username,
           date = EXCLUDED.date,
           time = EXCLUDED.time,
           time_start = EXCLUDED.time_start,
           time_end = EXCLUDED.time_end,
+          venue = EXCLUDED.venue,
           focus = EXCLUDED.focus,
           mode = EXCLUDED.mode,
           created_at = EXCLUDED.created_at,
@@ -118,6 +120,7 @@ async function main() {
                     b.time,
                     b.time_start || null,
                     b.time_end || null,
+                    b.venue || null,
                     JSON.stringify(Array.isArray(b.focus) ? b.focus : []),
                     b.mode || 'individual',
                     b.created_at ? new Date(b.created_at) : null,

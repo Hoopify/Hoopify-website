@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.hoopify_bookings (
   time TEXT NOT NULL,
   time_start TEXT,
   time_end TEXT,
+  venue TEXT,
   focus JSONB NOT NULL DEFAULT '[]'::jsonb,
   mode TEXT NOT NULL DEFAULT 'individual',
   created_at TIMESTAMPTZ,

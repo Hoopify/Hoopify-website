@@ -1,3 +1,10 @@
+function esc(s) {
+    return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+}
+
 // Focus Categories Definitions
 const CATEGORIES = [
     { name: "Outside Scoring", skills: ["Three-Point Shot", "Mid-Range Shot", "Close Shot", "Free Throw", "Offensive Consistency", "Shot IQ"] },
@@ -218,19 +225,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.className = 'list-item';
                 div.style.flexDirection = 'column';
                 div.style.alignItems = 'flex-start';
-                
-                const tags = b.focus.map(f => `<span class="gain-tag" style="margin-right:4px;">${f}</span>`).join('');
+
+                const focusList = Array.isArray(b.focus) ? b.focus : [];
+                const tags = focusList.map((f) => `<span class="gain-tag" style="margin-right:4px;">${esc(f)}</span>`).join('');
                 const when =
                     b.time_start && b.time_end
-                        ? `${b.date} · ${formatRange(b.time_start, b.time_end)}`
-                        : `${b.date} @ ${b.time}`;
+                        ? `${esc(b.date)} · ${formatRange(b.time_start, b.time_end)}`
+                        : `${esc(b.date)} @ ${esc(b.time)}`;
+                const place = b.venue ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4;"><strong style="color: var(--text-secondary);">Place:</strong> ${esc(b.venue)}</div>` : '';
                 div.innerHTML = `
                     <div style="font-size: 15px; font-weight: bold; color: var(--brand-orange); margin-bottom: 6px;">${when}</div>
-                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 8px;">Player: <span style="color: #fff;">${b.username}</span></div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Target Focus:</div>
+                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 8px;">Player: <span style="color: #fff;">${esc(b.username)}</span></div>
+                    ${place}
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; margin-top: 8px;">Target Focus:</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">${tags}</div>
                     
-                    <button class="btn secondary-btn" style="margin-top: 12px; padding: 6px; font-size: 12px;" onclick="document.getElementById('log-username').value = '${b.username}'">Sync Username to Drill Logger ↓</button>
+                    <button class="btn secondary-btn" style="margin-top: 12px; padding: 6px; font-size: 12px;" onclick="document.getElementById('log-username').value = '${esc(b.username)}'">Sync Username to Drill Logger ↓</button>
                 `;
                 bookingsList.appendChild(div);
             });
