@@ -15,7 +15,30 @@ const CATEGORIES = [
     { name: "Rebounding", skills: ["Offensive Rebound", "Defensive Rebound"] }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    const raw = sessionStorage.getItem('hoopify_session');
+    let sessEmail = '';
+    try {
+        if (raw) sessEmail = JSON.parse(raw).email || '';
+    } catch {
+        /* ignore */
+    }
+    if (!sessEmail) {
+        window.location.href = 'index.html';
+        return;
+    }
+    try {
+        const gate = await fetch(`/api/admin/status?email=${encodeURIComponent(sessEmail)}`);
+        const gateData = await gate.json();
+        if (!gateData.allowed) {
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch {
+        window.location.href = 'index.html';
+        return;
+    }
+
     const adminCategories = document.getElementById('admin-categories');
     
     const availDay = document.getElementById('avail-day');

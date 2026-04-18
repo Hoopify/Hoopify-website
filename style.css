@@ -1172,3 +1172,75 @@ input {
     color: var(--text-secondary);
     line-height: 1.5;
 }
+
+/* Stripe Embedded Checkout modal */
+.checkout-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.checkout-modal.hidden {
+    display: none !important;
+}
+
+.checkout-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.checkout-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    max-height: min(90vh, 720px);
+    overflow: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.checkout-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkout-modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.checkout-modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkout-modal-close:hover {
+    border-color: var(--brand-orange);
+    color: var(--brand-orange);
+}
+
+.embedded-checkout-mount {
+    padding: 8px 12px 16px;
+    min-height: 420px;
+}

@@ -333,6 +333,23 @@ function clearSession() {
         trackerName.style.display = 'none';
     }
     hideHomeBooking();
+    document.getElementById('admin-nav-link')?.classList.add('hidden');
+}
+
+async function updateAdminNavLink() {
+    const el = document.getElementById('admin-nav-link');
+    if (!el) return;
+    if (!currentUser) {
+        el.classList.add('hidden');
+        return;
+    }
+    try {
+        const r = await fetch(`/api/admin/status?email=${encodeURIComponent(currentUser)}`);
+        const d = await r.json();
+        el.classList.toggle('hidden', !d.allowed);
+    } catch {
+        el.classList.add('hidden');
+    }
 }
 
 function setupLogout() {
@@ -434,6 +451,7 @@ async function enterApp(email, displayName) {
     await fetchTrackerStats();
     renderCategories();
     switchView('view-home');
+    await updateAdminNavLink();
 }
 
 async function tryRestoreSession() {
@@ -562,6 +580,24 @@ function setupNavigation() {
 
 // WIZARD LOGIC
 function setupWizard() {
+    let embeddedCheckoutInstance = null;
+
+    function closeCheckoutModal() {
+        if (embeddedCheckoutInstance && typeof embeddedCheckoutInstance.destroy === 'function') {
+            try {
+                embeddedCheckoutInstance.destroy();
+            } catch {
+                /* ignore */
+            }
+        }
+        embeddedCheckoutInstance = null;
+        const mount = document.getElementById('embedded-checkout');
+        if (mount) mount.innerHTML = '';
+        const modal = document.getElementById('checkout-modal');
+        modal?.classList.add('hidden');
+        modal?.setAttribute('aria-hidden', 'true');
+    }
+
     const weekCalendarEl = document.getElementById('week-calendar');
     const weekLabelEl = document.getElementById('week-label');
     const btnNextPayment = document.getElementById('btn-next-payment');
@@ -698,7 +734,10 @@ function setupWizard() {
         stepTime.classList.add('active');
     });
 
-    // Pay -> Stripe Checkout (redirect)
+    document.getElementById('checkout-modal-close')?.addEventListener('click', closeCheckoutModal);
+    document.getElementById('checkout-modal-backdrop')?.addEventListener('click', closeCheckoutModal);
+
+    // Pay -> Stripe Embedded Checkout (modal on this page; success still returns to this site)
     document.getElementById('btn-pay-now').addEventListener('click', async () => {
         if (!currentUser) {
             alert('Please sign in to pay.');
@@ -706,7 +745,7 @@ function setupWizard() {
         }
         const btn = document.getElementById('btn-pay-now');
         const originalText = btn.textContent;
-        btn.textContent = 'Redirecting to secure checkout…';
+        btn.textContent = 'Opening checkout…';
         btn.disabled = true;
 
         try {
@@ -728,13 +767,26 @@ function setupWizard() {
                 alert(data.error || 'Could not start checkout. Is Stripe configured on the server?');
                 return;
             }
-            if (data.url) {
-                window.location.href = data.url;
+            if (typeof Stripe === 'undefined') {
+                alert('Payment library failed to load. Refresh the page.');
                 return;
             }
-            alert('No checkout URL returned.');
+            if (!data.clientSecret || !data.publishableKey) {
+                alert('Checkout could not start. Check Stripe publishable key and try again.');
+                return;
+            }
+            closeCheckoutModal();
+            const stripe = Stripe(data.publishableKey);
+            embeddedCheckoutInstance = await stripe.initEmbeddedCheckout({
+                clientSecret: data.clientSecret,
+            });
+            const modal = document.getElementById('checkout-modal');
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+            embeddedCheckoutInstance.mount('#embedded-checkout');
         } catch (e) {
-            alert('Error connecting to payment service.');
+            console.error(e);
+            alert('Error starting checkout.');
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;

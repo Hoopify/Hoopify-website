@@ -34,6 +34,9 @@ function normalizeEmail(email) {
     return String(email || '').trim().toLowerCase();
 }
 
+/** Only this account may access admin UI (override with ADMIN_EMAIL in .env). */
+const ADMIN_EMAIL_NORMALIZED = normalizeEmail(process.env.ADMIN_EMAIL || 'litowz12@gmail.com');
+
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -253,6 +256,15 @@ app.get('/api/config', (req, res) => {
     res.json({ venue: BOOKING_VENUE });
 });
 
+/** Whether the given email may use the admin dashboard. */
+app.get('/api/admin/status', (req, res) => {
+    const email = normalizeEmail(req.query.email || '');
+    if (!isValidEmail(email)) {
+        return res.json({ allowed: false });
+    }
+    res.json({ allowed: email === ADMIN_EMAIL_NORMALIZED });
+});
+
 app.post('/api/checkout/session', async (req, res) => {
     if (!stripe) {
         return res.status(503).json({
@@ -281,7 +293,9 @@ app.post('/api/checkout/session', async (req, res) => {
     const desc = timeStart && timeEnd ? `${date} · ${timeStart}–${timeEnd}` : `${date} @ ${time}`;
 
     try {
+        const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
         const session = await stripe.checkout.sessions.create({
+            ui_mode: 'embedded',
             mode: 'payment',
             payment_method_types: ['card'],
             line_items: [
@@ -297,8 +311,7 @@ app.post('/api/checkout/session', async (req, res) => {
                     quantity: 1,
                 },
             ],
-            success_url: `${PUBLIC_BASE_URL}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${PUBLIC_BASE_URL}/?checkout=cancel`,
+            return_url: `${PUBLIC_BASE_URL}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
             metadata: {
                 username,
                 date,
@@ -312,7 +325,15 @@ app.post('/api/checkout/session', async (req, res) => {
             customer_email: username,
         });
 
-        return res.json({ url: session.url, id: session.id });
+        if (!session.client_secret) {
+            return res.status(500).json({ error: 'Checkout session missing client secret (embedded mode).' });
+        }
+
+        return res.json({
+            clientSecret: session.client_secret,
+            id: session.id,
+            publishableKey,
+        });
     } catch (e) {
         console.error('Stripe checkout.session.create:', e);
         return res.status(500).json({ error: e.message || 'Could not start checkout' });

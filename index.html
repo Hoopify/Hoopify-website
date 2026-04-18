@@ -18,7 +18,7 @@
             <div class="user-profile" style="display: flex; align-items: center; gap: 12px;">
                 <span id="user-display" class="user-display" style="display: none; font-size: 12px; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
                 <button type="button" id="btn-logout" class="btn-text" style="display: none; font-size: 11px; color: var(--brand-orange);">Log out</button>
-                <a href="admin.html" style="color: var(--text-secondary); font-size: 11px; text-decoration: none;">Admin →</a>
+                <a id="admin-nav-link" href="admin.html" class="hidden" style="color: var(--text-secondary); font-size: 11px; text-decoration: none;">Admin →</a>
             </div>
         </header>
 
@@ -228,7 +228,20 @@
         </main>
 
     </div>
+
+    <!-- Stripe Embedded Checkout (same page, modal) -->
+    <div id="checkout-modal" class="checkout-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="checkout-modal-title">
+        <div class="checkout-modal-backdrop" id="checkout-modal-backdrop"></div>
+        <div class="checkout-modal-panel">
+            <div class="checkout-modal-header">
+                <span id="checkout-modal-title" class="checkout-modal-title">Secure payment</span>
+                <button type="button" class="checkout-modal-close" id="checkout-modal-close" aria-label="Close">×</button>
+            </div>
+            <div id="embedded-checkout" class="embedded-checkout-mount"></div>
+        </div>
+    </div>
     
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="app.js"></script>
 </body>
 </html>
