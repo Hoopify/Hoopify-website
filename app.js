@@ -656,7 +656,7 @@ function setupWizard() {
     });
 
     // Step 2 -> 3
-    btnNextPayment.addEventListener('click', () => {
+    btnNextPayment.addEventListener('click', async () => {
         if (!selectedSlot) {
             alert('Please select an available time slot.');
             return;
@@ -675,8 +675,18 @@ function setupWizard() {
         document.getElementById('summary-focus').textContent = selectedSkills.join(', ');
         document.getElementById('summary-datetime').textContent = `${date} · ${formatSlotRange(slot.start, slot.end)}`;
 
+        let venueText = '—';
+        try {
+            const r = await fetch('/api/config');
+            const c = await r.json();
+            if (c.venue) venueText = c.venue;
+        } catch {
+            /* keep placeholder */
+        }
+        const locEl = document.getElementById('summary-location');
+        if (locEl) locEl.textContent = venueText;
+
         document.getElementById('summary-price').textContent = '$50.00';
-        document.getElementById('btn-pay-amount').textContent = '$50.00';
 
         stepTime.classList.remove('active');
         stepPayment.classList.add('active');
@@ -695,8 +705,8 @@ function setupWizard() {
             return;
         }
         const btn = document.getElementById('btn-pay-now');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = 'Redirecting to secure checkout…';
+        const originalText = btn.textContent;
+        btn.textContent = 'Redirecting to secure checkout…';
         btn.disabled = true;
 
         try {
@@ -726,7 +736,7 @@ function setupWizard() {
         } catch (e) {
             alert('Error connecting to payment service.');
         } finally {
-            btn.innerHTML = originalText;
+            btn.textContent = originalText;
             btn.disabled = false;
         }
     });

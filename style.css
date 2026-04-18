@@ -440,6 +440,12 @@ input {
     max-width: 60%;
 }
 
+.summary-row-location .highlight-list {
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: normal;
+}
+
 .summary-divider {
     height: 1px;
     background: var(--border-color);
