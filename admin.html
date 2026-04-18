@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hoopify | Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-container { padding: 24px; }
+        .admin-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .admin-card h3 { color: var(--brand-orange); margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary); }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px; background: var(--bg-dark); border: 1px solid var(--border-color);
+            color: #fff; border-radius: var(--radius-md); margin-bottom: 12px;
+        }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .checkbox-label {
+            display: flex; align-items: center; background: var(--bg-dark); padding: 8px 12px;
+            border-radius: var(--radius-full); font-size: 13px; border: 1px solid var(--border-color); cursor: pointer; color: var(--text-secondary);
+        }
+        .checkbox-label input { margin-right: 8px; accent-color: var(--brand-orange); }
+        .list-item {
+            padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            margin-bottom: 12px; background: var(--bg-dark); display: flex; justify-content: space-between; align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <h1 class="logo">HOOPIFY <span style="font-size: 14px; color: var(--text-secondary); font-weight: 400;">ADMIN</span></h1>
+            <a href="index.html" class="btn secondary-btn" style="width: auto; padding: 6px 12px; font-size: 12px;">App View</a>
+        </header>
+
+        <main class="admin-container">
+            <div class="header-section">
+                <h2>Coach Dashboard</h2>
+                <p>Manage your weekly availability and log workouts for your players.</p>
+            </div>
+
+            <!-- AVAILABILITY -->
+            <div class="admin-card">
+                <h3>1. Recurring Weekly Schedule</h3>
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-secondary);">Day of Week</label>
+                        <select id="avail-day">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-secondary);">Time Slot</label>
+                        <input type="time" id="avail-time" required>
+                    </div>
+                </div>
+                <button class="btn secondary-btn" id="btn-add-availability" style="margin-top: 8px;">+ Add Slot</button>
+                
+                <h4 style="margin-top: 24px; font-size: 14px; color: var(--text-secondary);">Your Locked Schedule:</h4>
+                <div id="availability-list" style="margin-top: 12px;"></div>
+            </div>
+
+            <!-- BOOKINGS -->
+            <div class="admin-card">
+                <h3>2. Active Bookings</h3>
+                <div id="bookings-list">
+                    <div class="empty-state">Loading bookings...</div>
+                </div>
+            </div>
+
+            <!-- DRILL LOGGING -->
+            <div class="admin-card">
+                <h3>3. Log Completed Workout</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">After a session, create a drill and tag it to update the player's tracker instantly.</p>
+                
+                <div class="form-group">
+                    <label>Player Username</label>
+                    <input type="text" id="log-username" placeholder="Who completed the workout?" required>
+                </div>
+                <div class="form-group">
+                    <label>Workout / Drill Description</label>
+                    <input type="text" id="log-drill" placeholder="e.g. Double cross into pull up" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Attributes Improved (Tags)</label>
+                    <div id="admin-categories" class="checkbox-group">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button class="btn primary-btn" id="btn-log-workout">Log & Sync to Player Tracker</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

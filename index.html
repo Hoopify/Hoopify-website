@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hoopify | Premium Basketball Training</title>
+    <meta name="description" content="Book personalized basketball workouts, track your stats, and level up your game with Hoopify.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- HEADER -->
+        <header class="app-header">
+            <h1 class="logo" id="logo-home" style="cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">HOOPIFY<span class="dot">.</span></h1>
+            <div class="user-profile" style="display: flex; align-items: center; gap: 12px;">
+                <span id="user-display" class="user-display" style="display: none; font-size: 12px; color: var(--text-secondary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                <button type="button" id="btn-logout" class="btn-text" style="display: none; font-size: 11px; color: var(--brand-orange);">Log out</button>
+                <a href="admin.html" style="color: var(--text-secondary); font-size: 11px; text-decoration: none;">Admin →</a>
+            </div>
+        </header>
+
+        <!-- MAIN VIEWS -->
+        <main id="main-content">
+            <!-- VIEW: AUTH -->
+            <section id="view-auth" class="view active text-center">
+                <div class="home-hero auth-hero">
+                    <img src="logo.png" alt="Hoopify Logo" class="auth-logo">
+                    <h1 class="auth-title">Hoopify</h1>
+                    <p class="auth-lead">Sign in or create an account to book workouts and track your game.</p>
+
+                    <div class="auth-tabs" role="tablist">
+                        <button type="button" class="auth-tab active" id="tab-signin" data-panel="panel-signin" aria-selected="true">Sign in</button>
+                        <button type="button" class="auth-tab" id="tab-signup" data-panel="panel-signup" aria-selected="false">Create account</button>
+                    </div>
+
+                    <div id="auth-error" class="auth-error hidden" role="alert"></div>
+
+                    <div id="panel-signin" class="auth-panel active">
+                        <form id="form-signin" class="auth-form">
+                            <div class="form-group text-left">
+                                <label for="signin-email">Email</label>
+                                <input type="email" id="signin-email" name="email" autocomplete="email" required placeholder="you@example.com">
+                            </div>
+                            <div class="form-group text-left">
+                                <label for="signin-password">Password</label>
+                                <input type="password" id="signin-password" name="password" autocomplete="current-password" required placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="hero-btn primary-bg auth-submit" id="btn-signin">Sign in</button>
+                        </form>
+                    </div>
+
+                    <div id="panel-signup" class="auth-panel">
+                        <form id="form-signup" class="auth-form">
+                            <div class="form-row">
+                                <div class="form-group text-left">
+                                    <label for="signup-first">First name</label>
+                                    <input type="text" id="signup-first" name="firstName" autocomplete="given-name" required placeholder="First name">
+                                </div>
+                                <div class="form-group text-left">
+                                    <label for="signup-last">Last name</label>
+                                    <input type="text" id="signup-last" name="lastName" autocomplete="family-name" required placeholder="Last name">
+                                </div>
+                            </div>
+                            <div class="form-group text-left">
+                                <label for="signup-email">Email</label>
+                                <input type="email" id="signup-email" name="email" autocomplete="email" required placeholder="you@example.com">
+                            </div>
+                            <div class="form-group text-left">
+                                <label for="signup-password">Password</label>
+                                <input type="password" id="signup-password" name="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
+                            </div>
+                            <div class="form-group text-left">
+                                <label for="signup-password2">Confirm password</label>
+                                <input type="password" id="signup-password2" name="password2" autocomplete="new-password" required minlength="8" placeholder="Repeat password">
+                            </div>
+                            <button type="submit" class="hero-btn primary-bg auth-submit" id="btn-signup">Create account</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: HOME -->
+            <section id="view-home" class="view text-center">
+                <div class="home-hero">
+                    <img src="logo.png" alt="Hoopify Logo" style="width: 140px; height: 140px; object-fit: contain; margin-bottom: 0px;">
+                    <h1 style="font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 40px; color: var(--text-primary); text-transform: uppercase;">Hoopify</h1>
+                    <h2 id="home-welcome" class="home-welcome" style="display: none;"></h2>
+                    <div class="home-btn-group">
+                        <button class="hero-btn primary-bg" id="btn-go-booking">
+                            Book a Workout
+                        </button>
+                        <button class="hero-btn secondary-bg" id="btn-go-stats">
+                            My Tracker
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: BOOKING -->
+            <section id="view-booking" class="view">
+                <div class="header-section">
+                    <h2>Book a Workout</h2>
+                </div>
+
+                <div class="booking-wizard">
+                    <!-- Step 1: Select Focus -->
+                    <div class="wizard-step active" id="step-focus">
+                        <h3>Select what you want to improve</h3>
+                        <div class="categories-accordion" id="categories-container">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button class="btn primary-btn mt-20 fade-in" id="btn-next-time" disabled>Next: Select Time</button>
+                    </div>
+
+                    <!-- Step 2: Time & Mode -->
+                    <div class="wizard-step" id="step-time">
+                        <button class="btn back-btn" id="btn-back-focus">← Back</button>
+                        <h3>2. Schedule & Mode</h3>
+                        
+                        <div class="form-group">
+                            <label>Pick a Date</label>
+                            <input type="date" id="workout-date" required style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 14px 16px; border-radius: var(--radius-md); font-size: 16px; margin-bottom: 12px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Available Time</label>
+                            <select id="workout-time" required style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); padding: 14px 16px; border-radius: var(--radius-md); font-size: 16px;">
+                                <option value="">Select a date first...</option>
+                            </select>
+                        </div>
+
+                        <div class="workout-mode-selection">
+                            <label>Workout Type</label>
+                            <div class="mode-cards">
+                                <div class="mode-card active" data-mode="individual">
+                                    <div class="mode-icon">1v1</div>
+                                    <div class="mode-info">
+                                        <h4>Individual Session</h4>
+                                        <p>1-on-1 personalized training</p>
+                                    </div>
+                                    <div class="mode-price">$50.00</div>
+                                </div>
+                                <div class="mode-card" data-mode="group">
+                                    <div class="mode-icon">Group</div>
+                                    <div class="mode-info">
+                                        <h4>Join Group Workout</h4>
+                                        <p>Train with others, split the cost</p>
+                                    </div>
+                                    <div class="mode-price">$30.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn primary-btn mt-20" id="btn-next-payment">Next: Payment Details</button>
+                    </div>
+
+                    <!-- Step 3: Payment -->
+                    <div class="wizard-step" id="step-payment">
+                        <button class="btn back-btn" id="btn-back-time">← Back</button>
+                        <h3>3. Complete Booking</h3>
+                        
+                        <div class="order-summary">
+                            <div class="summary-row">
+                                <span>Session Type</span>
+                                <span id="summary-type" class="highlight">Individual</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Focus Areas</span>
+                                <span id="summary-focus" class="highlight-list">None</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Date & Time</span>
+                                <span id="summary-datetime" class="highlight">Not set</span>
+                            </div>
+                            <div class="summary-divider"></div>
+                            <div class="summary-row total">
+                                <span>Total Price</span>
+                                <span id="summary-price">$50.00</span>
+                            </div>
+                        </div>
+
+                        <div class="mobile-pay-prompt">
+                            <div class="nfc-icon">📱</div>
+                            <p>Secure checkout powered by Stripe (cards, Apple Pay, Google Pay where available).</p>
+                            <button type="button" class="btn pay-btn" id="btn-pay-now">Pay <span id="btn-pay-amount">$50.00</span></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Success State -->
+                <div id="booking-success" class="hidden text-center mt-40">
+                    <div class="success-icon">✓</div>
+                    <h2>Workout Confirmed</h2>
+                    <p>Get ready to work. We've updated your schedule.</p>
+                    <button class="btn secondary-btn mt-20" id="btn-book-another">Book Another</button>
+                </div>
+            </section>
+
+            <!-- VIEW: TRACKER -->
+            <section id="view-tracker" class="view">
+                <div class="header-section">
+                    <h2>Progress Tracker</h2>
+                    <p>Track your completed drills and focus areas.</p>
+                </div>
+                
+                <div class="stats-overview">
+                    <p id="tracker-player-name" class="tracker-player-name" style="display: none;" aria-live="polite"></p>
+                    <div class="stat-circle">
+                        <svg viewBox="0 0 36 36" class="circular-chart orange">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" id="overall-chart" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage" id="overall-score">0</text>
+                            <text x="18" y="25" class="stat-label">DRILLS</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="attributes-grid" id="attributes-display">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="workout-history mt-40">
+                    <h3>Workout History</h3>
+                    <div class="history-list" id="history-container">
+                        <!-- Populated by JS -->
+                        <div class="empty-state">No workouts completed yet.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

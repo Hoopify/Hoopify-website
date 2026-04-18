@@ -1,0 +1,38 @@
+{
+  "drills": [],
+  "tracker": {},
+  "users": {
+    "litowz12@gmail.com": {
+      "firstName": "Lito",
+      "lastName": "Wz",
+      "email": "litowz12@gmail.com",
+      "salt": "67fbf48d38eb314b344b5bcdd17e8421",
+      "passwordHash": "32921b7940e0b38d6e028bcff1ee4976dbd0eec8de2d9a4be13a6d0adaf53aa5bfbe0289f8836706db99d61f252aba2ef774c10e628a29e6326a1733624fa284",
+      "createdAt": "2026-04-16T21:29:45.059Z",
+      "tracker": {},
+      "history": []
+    }
+  },
+  "availability": {
+    "Monday": [
+      "08:00"
+    ],
+    "Tuesday": [
+      "08:00"
+    ],
+    "Wednesday": [
+      "08:00"
+    ],
+    "Thursday": [
+      "08:00"
+    ],
+    "Friday": [
+      "08:00"
+    ],
+    "Saturday": [
+      "06:30"
+    ],
+    "Sunday": []
+  },
+  "bookings": []
+}
